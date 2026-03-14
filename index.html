@@ -212,6 +212,17 @@ td:first-child { text-align: left; font-family: 'Nunito', sans-serif; font-weigh
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+#help-btn {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); font-size: 1.1rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; z-index: 998;
+  transition: all .2s;
+}
+#help-btn:hover { background: var(--surface2); border-color: var(--gold); color: var(--gold); }
+
 @media(max-width:500px) {
   .ec-inputs { grid-template-columns: 1fr 1fr; }
 }
@@ -334,6 +345,7 @@ td:first-child { text-align: left; font-family: 'Nunito', sans-serif; font-weigh
 
 </div>
 <div id="toast"></div>
+<a id="help-btn" href="mailto:info@bierwiegen.app" title="Hilfe / Kontakt">?</a>
 
 <script>
 // ════ STATE ════
