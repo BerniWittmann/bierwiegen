@@ -2,7 +2,7 @@
 
 Eine Web-App für das Bier-Golf Wiegespiel — jetzt als GitHub Pages gehostet.
 
-**🌐 Live:** `https://<dein-username>.github.io/bierwiegen`
+**🌐 Live:** `https://bierwiegen.bernhardwittmann.com`
 
 ## Was ist Bierwiegen?
 
