@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍺 Bierwiegen</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0d0a;
+  --bg2: #181410;
+  --surface: #221c12;
+  --surface2: #2e2518;
+  --border: #3d3020;
+  --gold: #f0a500;
+  --amber: #ff8c00;
+  --text: #ede0c4;
+  --muted: rgba(237,224,196,0.45);
+  --green: #56c271;
+  --red: #f05a5a;
+  --blue: #5aabf0;
+}
+* { box-sizing: border-box; margin:0; padding:0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 15% 85%, rgba(240,165,0,.07) 0%, transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(255,140,0,.05) 0%, transparent 40%);
+  pointer-events: none; z-index: 0;
+}
+.app { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 1rem 4rem; }
+
+header { text-align: center; padding: 2.5rem 0 1.5rem; }
+header h1 {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(3.5rem, 12vw, 6rem);
+  letter-spacing: 6px; color: var(--gold);
+  filter: drop-shadow(0 0 30px rgba(240,165,0,.35));
+  line-height: 1;
+}
+header p { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; margin-top: .3rem; }
+
+nav {
+  display: flex; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 4px; gap: 4px; margin-bottom: 2rem; overflow-x: auto;
+}
+.nav-btn {
+  flex: 1; min-width: fit-content; padding: .55rem .8rem; border: none; border-radius: 10px;
+  background: transparent; color: var(--muted); font-family: 'Nunito', sans-serif;
+  font-weight: 700; font-size: .78rem; letter-spacing: .5px; text-transform: uppercase;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.nav-btn.active { background: var(--gold); color: var(--bg); }
+.nav-btn:hover:not(.active) { color: var(--text); }
+
+.panel { display: none; animation: fadeIn .25s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.4rem; margin-bottom: 1rem; }
+.card-title { font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 2px; color: var(--gold); margin-bottom: 1rem; }
+
+label.field-label { display: block; font-size: .7rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+input[type=text], input[type=number] {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: .65rem .9rem; color: var(--text); font-family: 'DM Mono', monospace; font-size: 1rem;
+  transition: border-color .2s; margin-bottom: .8rem;
+}
+input:focus { outline: none; border-color: var(--gold); }
+
+.btn {
+  padding: .65rem 1.3rem; border: none; border-radius: 10px;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: .82rem;
+  letter-spacing: .5px; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.btn-gold { background: var(--gold); color: var(--bg); }
+.btn-gold:hover { background: var(--amber); transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-ghost { background: transparent; border: 1px solid transparent; color: var(--muted); font-size: .75rem; padding: .4rem .7rem; }
+.btn-ghost:hover { color: var(--red); border-color: rgba(240,90,90,.3); }
+.btn-sm { padding: .45rem .9rem; font-size: .75rem; }
+.btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+.btn-full { width: 100%; justify-content: center; }
+
+.player-list { display: flex; flex-direction: column; gap: .45rem; }
+.player-chip {
+  display: flex; align-items: center; gap: .7rem;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .9rem;
+}
+.player-chip .pname { flex:1; font-weight: 700; }
+.player-chip .pstart { font-family: 'DM Mono', monospace; font-size: .85rem; color: var(--gold); }
+.add-row { display: flex; gap: .5rem; margin-top: .6rem; }
+.add-row input { margin-bottom: 0; flex:1; }
+
+.round-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.round-number { font-family: 'Bebas Neue', cursive; font-size: 3.5rem; line-height:1; color: var(--gold); filter: drop-shadow(0 0 20px rgba(240,165,0,.3)); }
+.round-meta { display: flex; flex-direction: column; gap: .3rem; padding-top: .4rem; }
+.meta-row .label { font-size: .7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-right: .4rem; }
+.meta-row .value { font-family: 'DM Mono', monospace; font-size: 1rem; }
+
+.par-setter { background: var(--bg2); border: 1px solid var(--gold); border-radius: 12px; padding: 1.1rem 1.2rem; margin-bottom: 1.2rem; }
+.par-who { font-size: .72rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+.par-caller { font-weight: 800; font-size: 1.1rem; color: var(--gold); margin-bottom: .8rem; }
+.par-input-row { display: flex; gap: .6rem; align-items: center; }
+.par-input-row input { margin-bottom: 0; flex:1; font-size: 1.3rem; text-align: center; }
+.par-hint { font-size: .75rem; margin-top: .45rem; line-height: 1.5; }
+.par-hint.ok { color: var(--green); }
+.par-hint.warn { color: var(--amber); }
+.par-hint.info { color: var(--muted); }
+
+.entry-cards { display: flex; flex-direction: column; gap: .7rem; }
+.entry-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem;
+  transition: border-color .2s;
+}
+.entry-card.done { border-color: rgba(86,194,113,.4); }
+.entry-card.is-empty { border-color: rgba(240,90,90,.35); opacity: .7; }
+
+.ec-top { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; flex-wrap: wrap; }
+.ec-name { font-weight: 800; font-size: 1rem; flex:1; }
+.ec-tag { font-family: 'DM Mono', monospace; font-size: .75rem; background: var(--surface2); border-radius: 6px; padding: .2rem .5rem; color: var(--muted); }
+.ec-tag.remaining { color: var(--blue); }
+.ec-tag.empty { color: var(--red); }
+
+.ec-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; align-items: end; }
+.ec-field label.field-label { margin-bottom: .25rem; }
+.ec-field input { margin-bottom: 0; text-align: center; font-size: 1rem; }
+
+.delta-pill {
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-weight: 500; font-size: 1rem;
+  border-radius: 8px; min-height: 43px; background: var(--surface2);
+}
+.dp-good { background: rgba(86,194,113,.15); color: var(--green); border: 1px solid rgba(86,194,113,.25); }
+.dp-bad { background: rgba(240,90,90,.12); color: var(--red); border: 1px solid rgba(240,90,90,.2); }
+.dp-perfect { background: rgba(240,165,0,.15); color: var(--gold); border: 1px solid rgba(240,165,0,.3); }
+
+.info-box {
+  background: rgba(240,165,0,.07); border: 1px solid rgba(240,165,0,.2);
+  border-left: 3px solid var(--gold); border-radius: 0 10px 10px 0;
+  padding: .8rem 1rem; font-size: .82rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.6;
+}
+.info-box strong { color: var(--text); }
+
+.game-over { text-align: center; padding: 2.5rem 1rem; }
+.game-over .trophy { font-size: 4rem; display: block; margin-bottom: 1rem; }
+.game-over h2 { font-family: 'Bebas Neue', cursive; font-size: 3rem; color: var(--gold); letter-spacing: 3px; }
+.game-over p { color: var(--muted); margin: .5rem 0 1.5rem; }
+
+.score-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 380px; }
+thead tr { border-bottom: 2px solid var(--gold); }
+th { padding: .7rem .5rem; font-family: 'Bebas Neue', cursive; font-size: .95rem; letter-spacing: 1.5px; color: var(--gold); text-align: center; }
+th:first-child { text-align: left; padding-left: .8rem; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:hover { background: rgba(240,165,0,.04); }
+td { padding: .6rem .5rem; text-align: center; font-family: 'DM Mono', monospace; font-size: .82rem; }
+td:first-child { text-align: left; font-family: 'Nunito', sans-serif; font-weight: 700; padding-left: .8rem; font-size: .9rem; }
+.td-par { color: var(--muted); font-size: .72rem; }
+.td-good { color: var(--green); }
+.td-bad { color: var(--red); }
+.td-zero { color: var(--gold); }
+.td-empty-col { color: rgba(237,224,196,.2); }
+.td-total { font-weight: 700; font-size: .95rem !important; color: var(--gold); }
+
+.lb-item {
+  display: flex; align-items: center; gap: 1rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: .9rem 1.1rem; margin-bottom: .6rem; transition: transform .15s;
+}
+.lb-item:hover { transform: translateX(3px); }
+.lb-rank { font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--gold); width: 36px; text-align: center; opacity: .5; }
+.lb-rank.podium { opacity: 1; }
+.lb-info { flex:1; }
+.lb-name { font-weight: 800; font-size: 1rem; }
+.lb-sub { font-size: .72rem; color: var(--muted); margin-top: .15rem; font-family: 'DM Mono', monospace; }
+.lb-score { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 1px; color: var(--gold); }
+.lb-score.winner { color: var(--green); }
+
+.target-hint {
+  font-size: .8rem; color: var(--gold); background: rgba(240,165,0,.08);
+  border-radius: 7px; padding: .4rem .7rem; margin-bottom: .6rem;
+  border: 1px solid rgba(240,165,0,.18);
+}
+.target-hint.empty-hint { color: var(--amber); background: rgba(255,140,0,.08); border-color: rgba(255,140,0,.2); }
+.target-hint.done-hint { color: var(--muted); background: transparent; border-color: transparent; font-size:.75rem; }
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+.empty .icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+
+#toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--gold); color: var(--bg);
+  padding: .7rem 1.4rem; border-radius: 30px;
+  font-weight: 800; font-size: .85rem;
+  opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media(max-width:500px) {
+  .ec-inputs { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <h1>🍺 Bierwiegen</h1>
+  <p>Bier-Golf Präzisionssport</p>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showTab('setup')">⚙️ Setup</button>
+  <button class="nav-btn" onclick="showTab('runde')">🎯 Runde</button>
+  <button class="nav-btn" onclick="showTab('tabelle')">📊 Tabelle</button>
+  <button class="nav-btn" onclick="showTab('rangliste')">🏆 Rangliste</button>
+</nav>
+
+<!-- ═══ SETUP ═══ -->
+<div class="panel active" id="panel-setup">
+  <div class="card">
+    <div class="card-title">🏌️ Spieler & Startgewicht</div>
+    <div class="info-box">
+      Vor Spielbeginn wiegt jeder sein <strong>volles Bier</strong> ein — das ist das Startgewicht.
+      Dieses Gewicht wird über alle Runden als Grundlage verwendet.
+    </div>
+    <div class="player-list" id="playerList"></div>
+    <div class="add-row" style="margin-top:.8rem;">
+      <input type="text" id="newName" placeholder="Name..." onkeydown="if(event.key==='Enter')addPlayer()">
+      <input type="number" id="newWeight" placeholder="g" style="width:90px; margin-bottom:0;" onkeydown="if(event.key==='Enter')addPlayer()">
+      <button class="btn btn-gold" onclick="addPlayer()">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⛳ Runde 1 – Par</div>
+    <div class="info-box">
+      In der ersten Runde sagt <strong>irgendjemand</strong> das Par an. Ab Runde 2 ruft immer
+      der Spieler mit der <strong>kleinsten absoluten Differenz</strong> der letzten Runde das nächste Par aus.
+      Das Par sollte stets <strong>unter dem geringsten Endgewicht</strong> der vorigen Runde liegen.
+    </div>
+    <label class="field-label">Par für Runde 1 (in Gramm)</label>
+    <input type="number" id="firstPar" value="500" style="max-width:160px; text-align:center; font-size:1.3rem;">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="startGame()">🍺 Spiel starten</button>
+    <button class="btn btn-outline btn-sm" onclick="resetAll()">🗑 Zurücksetzen</button>
+  </div>
+</div>
+
+<!-- ═══ RUNDE ═══ -->
+<div class="panel" id="panel-runde">
+  <div id="gameOverScreen" style="display:none">
+    <div class="game-over">
+      <span class="trophy">🏆</span>
+      <h2>Spiel beendet!</h2>
+      <p>Alle Biere sind leer — Prost! 🍺</p>
+      <button class="btn btn-gold" onclick="goToLB()">Rangliste anzeigen →</button>
+    </div>
+  </div>
+
+  <div id="activeRound">
+    <div class="round-top">
+      <div>
+        <div style="font-size:.72rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:.2rem;">Runde</div>
+        <div class="round-number" id="roundNum">—</div>
+      </div>
+      <div class="round-meta">
+        <div class="meta-row">
+          <span class="label">Par</span>
+          <span class="value" id="roundParDisplay" style="color:var(--gold);">—</span>
+        </div>
+        <div class="meta-row" style="margin-top:.3rem;">
+          <span class="label">Angesagt von</span>
+          <span class="value" id="roundCaller">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="par-setter" id="parSetter">
+      <div class="par-who">📣 Par-Ansage</div>
+      <div class="par-caller" id="parCallerName">—</div>
+      <div class="par-input-row">
+        <input type="number" id="parInput" placeholder="Par in g..." oninput="updateParHint()">
+        <button class="btn btn-gold btn-sm" onclick="setPar()">✓ Setzen</button>
+      </div>
+      <div class="par-hint info" id="parHint">Bitte Par eingeben</div>
+    </div>
+
+    <div class="entry-cards" id="entryCards"></div>
+
+    <div class="btn-row" style="margin-top:1.2rem;">
+      <button class="btn btn-gold btn-full" onclick="finishRound()">Runde abschließen →</button>
+    </div>
+    <div id="endGameBtnWrap" style="margin-top:.6rem;">
+      <button class="btn btn-full" onclick="endGameEarly()"
+        style="background:rgba(240,90,90,.15);border:1px solid rgba(240,90,90,.4);color:var(--red);">
+        🛑 Spiel beenden
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TABELLE ═══ -->
+<div class="panel" id="panel-tabelle">
+  <div class="card-title">📊 Scorecard</div>
+  <div class="score-table-wrap">
+    <table id="scoreTable"><thead></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<!-- ═══ RANGLISTE ═══ -->
+<div class="panel" id="panel-rangliste">
+  <div class="card-title">🏆 Rangliste</div>
+  <div id="lbList"></div>
+</div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ════ STATE ════
+let S = {
+  players: [],   // [{name, startWeight}]
+  rounds: [],    // [{par, caller, entries:[{weight,drunk,absDelta}]}]
+  gameStarted: false,
+  gameOver: false,
+};
+
+function load() { try { const d=localStorage.getItem('bwv3'); if(d) S=JSON.parse(d); } catch(e){} }
+function save() { localStorage.setItem('bwv3', JSON.stringify(S)); }
+load();
+
+// ════ HELPERS ════
+function curRound() { return S.rounds[S.rounds.length-1]; }
+function curRoundIdx() { return S.rounds.length-1; }
+
+// How much beer a player has left BEFORE a given round index
+function remainingBefore(pi, roundIdx) {
+  let drunk = 0;
+  for(let r=0; r<roundIdx && r<S.rounds.length; r++) {
+    const e = S.rounds[r].entries[pi];
+    if(e && e.drunk != null) drunk += e.drunk;
+  }
+  return Math.max(0, (S.players[pi].startWeight||0) - drunk);
+}
+
+// ════ TABS ════
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const idx = {setup:0,runde:1,tabelle:2,rangliste:3}[name];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if(name==='runde') renderRound();
+  if(name==='tabelle') renderTable();
+  if(name==='rangliste') renderLB();
+  if(name==='setup') renderSetup();
+}
+
+function goToLB() { showTab('rangliste'); }
+
+// ════ SETUP ════
+function renderSetup() {
+  const el = document.getElementById('playerList');
+  if(!S.players.length) {
+    el.innerHTML='<div class="empty"><span class="icon">👤</span>Noch keine Spieler</div>'; return;
+  }
+  el.innerHTML = S.players.map((p,i)=>`
+    <div class="player-chip">
+      <span class="pname">${p.name}</span>
+      <span class="pstart">${p.startWeight!=null?p.startWeight+'g':'—'}</span>
+      <button class="btn btn-ghost" onclick="removePlayer(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addPlayer() {
+  const name = document.getElementById('newName').value.trim();
+  const w = parseFloat(document.getElementById('newWeight').value);
+  if(!name) return;
+  S.players.push({name, startWeight: isNaN(w)?null:w});
+  document.getElementById('newName').value='';
+  document.getElementById('newWeight').value='';
+  save(); renderSetup();
+}
+
+function removePlayer(i) { S.players.splice(i,1); save(); renderSetup(); }
+
+function startGame() {
+  if(S.players.length < 2) return showToast('Mindestens 2 Spieler!');
+  const missing = S.players.filter(p=>p.startWeight==null||p.startWeight<=0);
+  if(missing.length) return showToast('Startgewicht fehlt: '+missing.map(p=>p.name).join(', '));
+  const par = parseFloat(document.getElementById('firstPar').value);
+  if(!par||par<=0) return showToast('Bitte Par für Runde 1 eingeben!');
+
+  S.gameStarted = true;
+  S.gameOver = false;
+  S.rounds = [{
+    par,
+    caller: '(Runde 1)',
+    entries: S.players.map(()=>({weight:null,drunk:null,absDelta:null}))
+  }];
+  save();
+  showTab('runde');
+  showToast('🍺 Spiel gestartet!');
+}
+
+function resetAll() {
+  if(!confirm('Alles löschen?')) return;
+  S = {players:[],rounds:[],gameStarted:false,gameOver:false};
+  save(); renderSetup(); showToast('🗑 Zurückgesetzt');
+}
+
+// ════ ROUND ════
+function renderRound() {
+  if(!S.gameStarted) {
+    document.getElementById('gameOverScreen').style.display='none';
+    document.getElementById('activeRound').style.display='block';
+    document.getElementById('entryCards').innerHTML='<div class="empty"><span class="icon">⚙️</span>Erst Setup abschließen und Spiel starten</div>';
+    document.getElementById('parSetter').style.display='none';
+    document.getElementById('roundNum').textContent='—';
+    return;
+  }
+
+  if(S.gameOver) {
+    document.getElementById('gameOverScreen').style.display='block';
+    document.getElementById('activeRound').style.display='none';
+    return;
+  }
+
+  document.getElementById('gameOverScreen').style.display='none';
+  document.getElementById('activeRound').style.display='block';
+
+  const ri = curRoundIdx();
+  const round = curRound();
+
+  document.getElementById('roundNum').textContent = ri+1;
+  document.getElementById('roundParDisplay').textContent = round.par ? round.par+'g' : '?';
+  document.getElementById('roundCaller').textContent = round.caller || '—';
+
+  // Par setter: only show if par not yet set (round > 0)
+  const parSetter = document.getElementById('parSetter');
+  if(!round.par) {
+    parSetter.style.display='block';
+    document.getElementById('parCallerName').textContent = round.caller || '—';
+    document.getElementById('parInput').value='';
+    updateParHint();
+  } else {
+    parSetter.style.display='none';
+  }
+
+  // Entry cards
+  const cards = document.getElementById('entryCards');
+  cards.innerHTML = S.players.map((p,pi)=>{
+    const e = round.entries[pi];
+    const rem = remainingBefore(pi, ri);
+    const isEmpty = rem <= 0;
+    const isDone = !isEmpty && e.weight!==null;
+
+    // Remaining tag
+    let remTag = `<span class="ec-tag remaining">${rem}g übrig</span>`;
+    if(isEmpty) remTag = `<span class="ec-tag empty">🍺 Leer</span>`;
+
+    // Delta pill
+    let dpHtml = '<div class="delta-pill">\u2014</div>';
+    if(isDone && e.absDelta!==null) {
+      const d=e.absDelta;
+      const cls = d===0?'dp-perfect':d<=15?'dp-good':'dp-bad';
+      dpHtml = `<div class="delta-pill ${cls}">|${d.toFixed(0)}|g</div>`;
+    }
+
+    // Target hint: how much to drink to hit par
+    let targetHint = '';
+    if(!isEmpty && round.par) {
+      const targetEnd = rem - round.par;
+      if(!isDone) {
+        if(targetEnd <= 0) {
+          targetHint = `<div class="target-hint empty-hint">\u26a0 Bier reicht nicht fuer das Par (${rem}g uebrig)</div>`;
+        } else {
+          targetHint = `<div class="target-hint">\u2192 Bis <strong>${targetEnd.toFixed(0)}g</strong> trinken (${round.par}g trinken)</div>`;
+        }
+      }
+    }
+
+    return `
+      <div class="entry-card ${isDone?'done':''} ${isEmpty?'is-empty':''}" id="ec_${pi}">
+        <div class="ec-top">
+          <span class="ec-name">${p.name}</span>
+          <span class="ec-tag">Start: ${p.startWeight}g</span>
+          ${remTag}
+        </div>
+        ${isEmpty ? `<div style="color:var(--muted);font-size:.82rem;padding-top:.2rem;">Kein Bier mehr – ueberspringen</div>` : `
+        ${targetHint}
+        <div class="ec-inputs">
+          <div class="ec-field">
+            <label class="field-label">Endgewicht (g)</label>
+            <input type="number" id="w_${ri}_${pi}"
+              value="${e.weight!==null?e.weight:''}"
+              placeholder="${round.par||'?'}g"
+              oninput="onWeightInput(${pi})" ${!round.par?'disabled':''}>
+          </div>
+          <div class="ec-field">
+            <label class="field-label">Getrunken (g)</label>
+            <input type="number" id="drunk_${ri}_${pi}"
+              value="${e.drunk!==null?e.drunk.toFixed(0):''}"
+              readonly style="color:var(--blue);cursor:default;" placeholder="\u2014">
+          </div>
+          <div class="ec-field">
+            <label class="field-label">|Δ| zum Par</label>
+            ${dpHtml}
+          </div>
+        </div>`}
+      </div>
+    `;
+  }).join('');
+
+}
+
+function onWeightInput(pi) {
+  const ri = curRoundIdx();
+  const round = curRound();
+  if(!round || !round.par) return;
+
+  const w = parseFloat(document.getElementById(`w_${ri}_${pi}`).value);
+  const rem = remainingBefore(pi, ri);
+
+  if(isNaN(w)) {
+    round.entries[pi] = {weight:null,drunk:null,absDelta:null};
+    document.getElementById(`drunk_${ri}_${pi}`).value='';
+    renderDeltaPill(pi, null);
+    save(); return;
+  }
+
+  const drunk = Math.max(0, rem - w);
+  const absDelta = Math.abs(w - round.par);
+
+  round.entries[pi].weight = w;
+  round.entries[pi].drunk = drunk;
+  round.entries[pi].absDelta = absDelta;
+
+  document.getElementById(`drunk_${ri}_${pi}`).value = drunk.toFixed(0);
+  renderDeltaPill(pi, absDelta);
+
+  const card = document.getElementById(`ec_${pi}`);
+  if(card) card.classList.toggle('done', true);
+  save();
+}
+
+function renderDeltaPill(pi, absDelta) {
+  const ri = curRoundIdx();
+  const card = document.getElementById(`ec_${pi}`);
+  if(!card) return;
+  const pills = card.querySelectorAll('.delta-pill');
+  if(!pills.length) return;
+  if(absDelta===null) { pills[0].className='delta-pill'; pills[0].textContent='—'; return; }
+  const cls = absDelta===0?'dp-perfect':absDelta<=15?'dp-good':'dp-bad';
+  pills[0].className=`delta-pill ${cls}`;
+  pills[0].textContent=`|${absDelta.toFixed(0)}|g`;
+}
+
+function updateParHint() {
+  const hint = document.getElementById('parHint');
+  if(!hint) return;
+  const ri = curRoundIdx();
+  const val = parseFloat(document.getElementById('parInput').value);
+
+  if(ri === 0) { hint.textContent='Runde 1 – frei wählbar'; hint.className='par-hint info'; return; }
+
+  const prevRound = S.rounds[ri-1];
+  if(!prevRound) return;
+  const endWeights = prevRound.entries.map(e=>e.weight).filter(w=>w!==null);
+  if(!endWeights.length) { hint.textContent='Noch keine Endgewichte der letzten Runde'; hint.className='par-hint info'; return; }
+
+  const minEnd = Math.min(...endWeights);
+  const suggestion = minEnd - 1;
+
+  if(isNaN(val)) {
+    hint.textContent = `Empfehlung: unter ${minEnd}g (geringstes Endgewicht letzte Runde)`;
+    hint.className='par-hint info'; return;
+  }
+
+  if(val < minEnd) {
+    hint.textContent = `✓ Gültig – unter ${minEnd}g`;
+    hint.className='par-hint ok';
+  } else {
+    hint.textContent = `⚠ Zu hoch! Sollte unter ${minEnd}g liegen`;
+    hint.className='par-hint warn';
+  }
+}
+
+function setPar() {
+  const val = parseFloat(document.getElementById('parInput').value);
+  if(isNaN(val)||val<=0) return showToast('Bitte gültiges Par eingeben!');
+  curRound().par = val;
+  document.getElementById('roundParDisplay').textContent = val+'g';
+  document.getElementById('parSetter').style.display='none';
+  save(); renderRound();
+  showToast(`Par: ${val}g ✓`);
+}
+
+function finishRound() {
+  const ri = curRoundIdx();
+  const round = curRound();
+  if(!round.par) return showToast('Bitte erst Par setzen!');
+
+  // Check all active players have entered weight
+  const missing = S.players.filter((p,pi)=>{
+    const rem = remainingBefore(pi, ri);
+    return rem > 0 && round.entries[pi].weight===null;
+  });
+  if(missing.length) return showToast('Fehlt noch: '+missing.map(p=>p.name).join(', '));
+
+  // Check if all beers are now empty
+  const allEmpty = S.players.every((p,pi)=>{
+    const rem = remainingBefore(pi, ri);
+    if(rem <= 0) return true;
+    const drunk = round.entries[pi].drunk || 0;
+    return (rem - drunk) <= 0;
+  });
+
+  // Also mark beers as fully empty if weight reached 0
+  S.players.forEach((p,pi)=>{
+    const e = round.entries[pi];
+    if(e.weight !== null && e.weight <= 0) {
+      e.weight = 0; e.drunk = remainingBefore(pi,ri); e.absDelta = Math.abs(0 - round.par);
+    }
+  });
+
+  if(allEmpty) {
+    S.gameOver = true; save(); renderRound();
+    showToast('🍺 Alle Biere leer – Spiel vorbei!');
+    return;
+  }
+
+  // Find next caller: smallest |delta| this round (among active players)
+  let bestDelta = Infinity, callerIdx = 0;
+  S.players.forEach((p,pi)=>{
+    const rem = remainingBefore(pi, ri);
+    if(rem <= 0) return;
+    const d = round.entries[pi].absDelta;
+    if(d!==null && d<bestDelta) { bestDelta=d; callerIdx=pi; }
+  });
+
+  // Min end weight for suggestion
+  const endWeights = round.entries.map(e=>e.weight).filter(w=>w!==null&&w>0);
+  const minEnd = endWeights.length ? Math.min(...endWeights) : null;
+
+  // New round
+  S.rounds.push({
+    par: null,
+    caller: S.players[callerIdx].name,
+    suggestedMaxPar: minEnd ? minEnd-1 : null,
+    entries: S.players.map(()=>({weight:null,drunk:null,absDelta:null}))
+  });
+  save(); renderRound();
+  showToast(`Runde ${S.rounds.length} — ${S.players[callerIdx].name} sagt das Par an!`);
+}
+
+function endGameEarly() {
+  if(!confirm('Spiel wirklich beenden? Die aktuelle Runde wird abgebrochen.')) return;
+  // Discard current round if it has no completed entries
+  const ri = curRoundIdx();
+  const round = curRound();
+  const hasAnyEntry = round && round.entries.some(e=>e.absDelta!==null);
+  if(!hasAnyEntry && S.rounds.length > 1) {
+    S.rounds.pop(); // remove incomplete round
+  }
+  S.gameOver = true; save();
+  renderRound();
+  showToast('🍺 Spiel beendet – Prost!');
+  setTimeout(()=>{ showTab('rangliste'); }, 800);
+}
+
+// ════ TABLE ════
+function renderTable() {
+  const tbl = document.getElementById('scoreTable');
+  const done = S.rounds.filter(r=>r.par && r.entries.some(e=>e.absDelta!==null));
+  if(!done.length) {
+    tbl.querySelector('thead').innerHTML='';
+    tbl.querySelector('tbody').innerHTML='<tr><td colspan="99"><div class="empty"><span class="icon">📊</span>Noch keine Runden</div></td></tr>';
+    return;
+  }
+
+  let thead = '<tr><th>Spieler</th>';
+  done.forEach((_,i)=>thead+=`<th>R${i+1}</th>`);
+  thead += '<th>Σ|Δ|</th><th>Ø|Δ|</th></tr>';
+  thead += '<tr style="border-bottom:1px solid var(--border)"><td class="td-par" style="padding-left:.8rem">Par</td>';
+  done.forEach(r=>thead+=`<td class="td-par">${r.par}g</td>`);
+  thead += '<td></td><td></td></tr>';
+  tbl.querySelector('thead').innerHTML = thead;
+
+  const rows = S.players.map((p,pi)=>{
+    let sum=0, cnt=0;
+    const cells = done.map(r=>{
+      const e=r.entries[pi];
+      if(!e||e.absDelta===null) return null;
+      sum+=e.absDelta; cnt++;
+      return e.absDelta;
+    });
+    return {name:p.name, cells, sum, avg:cnt>0?sum/cnt:null};
+  }).sort((a,b)=>a.sum-b.sum);
+
+  let tbody='';
+  rows.forEach(({name,cells,sum,avg},rank)=>{
+    const medal=rank===0?'🥇 ':rank===1?'🥈 ':rank===2?'🥉 ':'';
+    tbody+=`<tr><td>${medal}${name}</td>`;
+    cells.forEach(d=>{
+      if(d===null){tbody+=`<td class="td-empty-col">—</td>`;return;}
+      const cls=d===0?'td-zero':d<=15?'td-good':'td-bad';
+      tbody+=`<td class="${cls}">${d.toFixed(0)}</td>`;
+    });
+    tbody+=`<td class="td-total">${sum>0?sum.toFixed(0):'—'}</td>`;
+    tbody+=`<td style="color:var(--muted);font-size:.78rem;">${avg!==null?avg.toFixed(1):'—'}</td>`;
+    tbody+='</tr>';
+  });
+  tbl.querySelector('tbody').innerHTML=tbody;
+}
+
+// ════ LEADERBOARD ════
+function renderLB() {
+  const el = document.getElementById('lbList');
+  const done = S.rounds.filter(r=>r.par&&r.entries.some(e=>e.absDelta!==null));
+  if(!done.length) {
+    el.innerHTML='<div class="empty"><span class="icon">🍺</span>Noch keine Runden gespielt</div>'; return;
+  }
+
+  const ri = S.rounds.length-1;
+  const rows = S.players.map((p,pi)=>{
+    let sum=0,cnt=0,best=Infinity;
+    done.forEach(r=>{
+      const e=r.entries[pi];
+      if(e&&e.absDelta!=null){sum+=e.absDelta;cnt++;if(e.absDelta<best)best=e.absDelta;}
+    });
+    const rem = remainingBefore(pi, ri+1);
+    return {name:p.name,sum,cnt,avg:cnt>0?sum/cnt:null,best:best===Infinity?null:best,rem};
+  }).sort((a,b)=>a.sum-b.sum);
+
+  el.innerHTML = rows.map(({name,sum,cnt,avg,best,rem},rank)=>`
+    <div class="lb-item">
+      <div class="lb-rank ${rank<3?'podium':''}">${rank+1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${rank===0?'🥇 ':''}${name}</div>
+        <div class="lb-sub">${cnt} Runden · Best |Δ|: ${best!==null?best.toFixed(0)+'g':'—'} · ${rem>0?rem.toFixed(0)+'g übrig':'Bier leer 🍺'}</div>
+      </div>
+      <div class="lb-score ${rank===0?'winner':''}">${cnt>0?sum.toFixed(0)+'g':'—'}</div>
+    </div>
+  `).join('');
+}
+
+// ════ TOAST ════
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// Init
+renderSetup();
+</script>
+</body>
+</html>
