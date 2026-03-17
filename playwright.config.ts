@@ -11,7 +11,6 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
     launchOptions: {
-      executablePath: '/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     },
   },
