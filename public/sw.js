@@ -1,4 +1,4 @@
-const CACHE = 'bierwiegen-v2';
+const CACHE = 'bierwiegen-__BUILD_ID__';
 const ASSETS = [
   '/',
   '/manifest.json',
@@ -22,6 +22,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Always fetch HTML from network so new deploys are picked up immediately
+  if (e.request.headers.get('accept')?.includes('text/html')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
