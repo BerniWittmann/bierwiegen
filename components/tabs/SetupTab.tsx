@@ -1,0 +1,206 @@
+'use client'
+
+import { useState } from 'react'
+import { useGame } from '@/lib/gameState'
+
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="text-muted text-[0.82rem] mb-4 leading-relaxed rounded-r-[10px] p-4"
+      style={{
+        background: 'rgba(240,165,0,0.07)',
+        border: '1px solid rgba(240,165,0,0.2)',
+        borderLeft: '3px solid #f0a500',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function BtnGold({
+  onClick,
+  children,
+  className = '',
+}: {
+  onClick: () => void
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-5 py-3 bg-gold text-bg rounded-[10px] font-nunito font-extrabold text-[0.82rem] uppercase tracking-[0.5px] cursor-pointer border-none hover:bg-amber hover:-translate-y-px transition-all ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+export default function SetupTab() {
+  const { state, updateState, showToast, setActiveTab } = useGame()
+  const [newName, setNewName] = useState('')
+  const [newWeight, setNewWeight] = useState('')
+  const [firstPar, setFirstPar] = useState('500')
+
+  const addPlayer = () => {
+    const name = newName.trim()
+    if (!name) return
+    const w = parseFloat(newWeight)
+    updateState((prev) => ({
+      ...prev,
+      players: [...prev.players, { name, startWeight: isNaN(w) ? null : w }],
+    }))
+    setNewName('')
+    setNewWeight('')
+  }
+
+  const removePlayer = (i: number) => {
+    updateState((prev) => ({
+      ...prev,
+      players: prev.players.filter((_, idx) => idx !== i),
+    }))
+  }
+
+  const startGame = () => {
+    if (state.players.length < 2) return showToast('Mindestens 2 Spieler!')
+    const missing = state.players.filter((p) => !p.startWeight || p.startWeight <= 0)
+    if (missing.length)
+      return showToast('Startgewicht fehlt: ' + missing.map((p) => p.name).join(', '))
+    const par = parseFloat(firstPar)
+    if (!par || par <= 0) return showToast('Bitte Par für Runde 1 eingeben!')
+
+    updateState((prev) => ({
+      ...prev,
+      gameStarted: true,
+      gameOver: false,
+      rounds: [
+        {
+          par,
+          caller: '(Runde 1)',
+          entries: prev.players.map(() => ({ weight: null, drunk: null, absDelta: null })),
+        },
+      ],
+    }))
+    setActiveTab('runde')
+    showToast('🍺 Spiel gestartet!')
+  }
+
+  const resetAll = () => {
+    if (!confirm('Alles löschen?')) return
+    updateState(() => ({ players: [], rounds: [], gameStarted: false, gameOver: false }))
+    showToast('🗑 Zurückgesetzt')
+  }
+
+  return (
+    <div className="animate-fadeIn">
+      {/* Players card */}
+      <div className="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div className="font-bebas text-[1.3rem] tracking-[2px] text-gold mb-4">
+          🏌️ Spieler &amp; Startgewicht
+        </div>
+        <InfoBox>
+          Vor Spielbeginn wiegt jeder sein{' '}
+          <strong className="text-cream">volles Bier</strong> ein — das ist das
+          Startgewicht. Dieses Gewicht wird über alle Runden als Grundlage verwendet.
+        </InfoBox>
+
+        {state.players.length === 0 ? (
+          <div className="text-center py-10 text-muted">
+            <span className="text-4xl block mb-2">👤</span>
+            Noch keine Spieler
+          </div>
+        ) : (
+          <div className="flex flex-col gap-[0.45rem]">
+            {state.players.map((p, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 bg-bg2 border border-border rounded-[10px] px-4 py-2"
+              >
+                <span className="flex-1 font-bold">{p.name}</span>
+                <span className="font-mono text-[0.85rem] text-gold">
+                  {p.startWeight != null ? p.startWeight + 'g' : '—'}
+                </span>
+                <button
+                  onClick={() => removePlayer(i)}
+                  className="bg-transparent border border-transparent text-muted text-[0.75rem] px-3 py-1 rounded cursor-pointer font-nunito font-extrabold uppercase tracking-[0.5px] hover:text-red transition-colors"
+                  style={{ transition: 'all 0.15s' }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget
+                    el.style.borderColor = 'rgba(240,90,90,0.3)'
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget
+                    el.style.borderColor = 'transparent'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2 mt-3">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+            placeholder="Name..."
+            className="flex-1 !mb-0"
+          />
+          <input
+            type="number"
+            value={newWeight}
+            onChange={(e) => setNewWeight(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+            placeholder="g"
+            className="!w-[90px] !mb-0"
+          />
+          <button
+            onClick={addPlayer}
+            className="px-5 bg-gold text-bg rounded-[10px] font-nunito font-extrabold text-[0.82rem] uppercase tracking-[0.5px] cursor-pointer border-none hover:bg-amber hover:-translate-y-px transition-all"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* Par card */}
+      <div className="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div className="font-bebas text-[1.3rem] tracking-[2px] text-gold mb-4">
+          ⛳ Runde 1 – Par
+        </div>
+        <InfoBox>
+          In der ersten Runde sagt{' '}
+          <strong className="text-cream">irgendjemand</strong> das Par an. Ab Runde 2
+          ruft immer der Spieler mit der{' '}
+          <strong className="text-cream">kleinsten absoluten Differenz</strong> der
+          letzten Runde das nächste Par aus. Das Par sollte stets{' '}
+          <strong className="text-cream">unter dem geringsten Endgewicht</strong> der
+          vorigen Runde liegen.
+        </InfoBox>
+        <label className="block text-[0.7rem] tracking-[1.5px] uppercase text-muted mb-1">
+          Par für Runde 1 (in Gramm)
+        </label>
+        <input
+          type="number"
+          value={firstPar}
+          onChange={(e) => setFirstPar(e.target.value)}
+          className="!max-w-[160px] !text-center !text-[1.3rem]"
+        />
+      </div>
+
+      <div className="flex gap-2 flex-wrap mt-4">
+        <BtnGold onClick={startGame}>🍺 Spiel starten</BtnGold>
+        <button
+          onClick={resetAll}
+          className="px-4 py-2 bg-transparent border border-border text-cream rounded-[10px] font-nunito font-extrabold text-[0.75rem] uppercase tracking-[0.5px] cursor-pointer hover:border-gold hover:text-gold transition-all"
+        >
+          🗑 Zurücksetzen
+        </button>
+      </div>
+    </div>
+  )
+}
