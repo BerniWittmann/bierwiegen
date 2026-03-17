@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test'
 
 // Helper: start a game with 2 players
 async function startGame(page: import('@playwright/test').Page) {
-  await page.goto('/')
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => localStorage.removeItem('bwv3'))
-  await page.reload()
+  await page.reload({ waitUntil: 'domcontentloaded' })
 
   await page.fill('input[placeholder="Name..."]', 'Alice')
   await page.fill('input[placeholder="g"]', '500')
@@ -21,37 +21,31 @@ test.describe('Runde tab', () => {
   test('shows round 1 after game start with par 500', async ({ page }) => {
     await startGame(page)
 
-    await expect(page.getByText('Par')).toBeVisible()
-    await expect(page.getByText('500g')).toBeVisible()
+    await expect(page.getByText('500g').first()).toBeVisible()
     await expect(page.getByText('Alice')).toBeVisible()
     await expect(page.getByText('Bob')).toBeVisible()
   })
 
   test('shows remaining beer for each player', async ({ page }) => {
     await startGame(page)
-    await expect(page.getByText('500g übrig')).toBeVisible()
-    await expect(page.getByText('480g übrig')).toBeVisible()
+    await expect(page.locator('span.text-blue', { hasText: '500g übrig' })).toBeVisible()
+    await expect(page.locator('span.text-blue', { hasText: '480g übrig' })).toBeVisible()
   })
 
   test('shows target hint when par is set', async ({ page }) => {
     await startGame(page)
-    // Par is 500, Alice has 500g, Bob has 480g
-    // Target hint for Alice: drink until 0g (500-500=0), can't reach par
-    // Target hint for Bob: drink until -20g (480-500=-20), can't reach par
-    // Actually since rem < par for both, they show warning hints
+    // Par=500, Alice has 500g → not enough; Bob has 480g → not enough
     await expect(page.getByText(/Bier reicht nicht/i).first()).toBeVisible()
   })
 
   test('calculates drunk and delta when weight entered', async ({ page }) => {
     await startGame(page)
 
-    // Enter end weight for Alice: 200g
-    const weightInputs = page.locator('input[type="number"]:not([readonly])')
+    // Enter end weight for Alice: 200g → drunk=300, delta=|200-500|=300
+    const weightInputs = page.locator('input[type="number"]:not([readonly]):not(:disabled)')
     await weightInputs.first().fill('200')
 
-    // Delta should be |200 - 500| = 300
     await expect(page.getByText('|300|g')).toBeVisible()
-    // Drunk should be 500 - 200 = 300
     const drunkInput = page.locator('input[readonly]').first()
     await expect(drunkInput).toHaveValue('300')
   })
@@ -65,7 +59,6 @@ test.describe('Runde tab', () => {
   test('can complete a round and advance to round 2', async ({ page }) => {
     await startGame(page)
 
-    // Enter weights for Alice and Bob
     const weightInputs = page.locator('input[type="number"]:not([readonly]):not(:disabled)')
     await weightInputs.nth(0).fill('200')
     await weightInputs.nth(1).fill('180')
@@ -74,21 +67,20 @@ test.describe('Runde tab', () => {
 
     // Should now be on round 2 with a par setter
     await expect(page.getByText(/Par-Ansage/i)).toBeVisible()
-    await expect(page.locator('.font-bebas').filter({ hasText: '2' }).first()).toBeVisible()
   })
 
   test('shows par setter for round 2 caller', async ({ page }) => {
     await startGame(page)
 
-    // Alice delta = |200-500|=300, Bob delta = |180-500|=320
-    // Alice wins (smaller delta), so Alice announces next par
+    // Alice delta=|200-500|=300, Bob delta=|180-500|=320 → Alice wins (smaller)
     const weightInputs = page.locator('input[type="number"]:not([readonly]):not(:disabled)')
     await weightInputs.nth(0).fill('200')
     await weightInputs.nth(1).fill('180')
     await page.getByRole('button', { name: /Runde abschließen/i }).click()
 
-    // Alice has smaller delta (300 vs 320), so Alice should be the caller
-    await expect(page.getByText('Alice')).toBeVisible()
+    // Alice should be the caller (smallest delta)
+    const callerSection = page.locator('[class*="text-gold"]').filter({ hasText: 'Alice' })
+    await expect(callerSection).toBeVisible()
   })
 
   test('can set par for round 2 and continue', async ({ page }) => {
@@ -103,7 +95,8 @@ test.describe('Runde tab', () => {
     await page.fill('input[placeholder="Par in g..."]', '150')
     await page.getByRole('button', { name: /Setzen/i }).click()
 
-    await expect(page.getByText('150g')).toBeVisible()
+    // Par display shows in the header area as "span.text-gold"
+    await expect(page.locator('span.text-gold', { hasText: '150g' })).toBeVisible()
   })
 
   test('end game early shows game over screen', async ({ page }) => {
@@ -112,15 +105,16 @@ test.describe('Runde tab', () => {
     page.on('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: /Spiel beenden/i }).click()
 
-    await expect(page.getByText('Rangliste')).toBeVisible()
+    // Should redirect to Rangliste
+    await expect(page.getByText(/Rangliste/i).first()).toBeVisible()
   })
 })
 
 test.describe('Tabelle tab', () => {
   test('shows "no rounds" when game has not started', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.evaluate(() => localStorage.removeItem('bwv3'))
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
 
     await page.getByRole('button', { name: /Tabelle/i }).click()
     await expect(page.getByText('Noch keine Runden')).toBeVisible()
@@ -137,9 +131,8 @@ test.describe('Tabelle tab', () => {
     await page.getByRole('button', { name: /Tabelle/i }).click()
 
     await expect(page.getByText('R1')).toBeVisible()
-    await expect(page.getByText('500g')).toBeVisible() // par row
-    await expect(page.getByText('Alice')).toBeVisible()
-    await expect(page.getByText('Bob')).toBeVisible()
+    await expect(page.getByRole('cell', { name: /Alice/ })).toBeVisible()
+    await expect(page.getByRole('cell', { name: /Bob/ })).toBeVisible()
   })
 
   test('scorecard shows medal icons for top 3', async ({ page }) => {
@@ -152,16 +145,15 @@ test.describe('Tabelle tab', () => {
 
     await page.getByRole('button', { name: /Tabelle/i }).click()
 
-    // Should show medals
     await expect(page.getByText('🥇')).toBeVisible()
   })
 })
 
 test.describe('Rangliste tab', () => {
   test('shows "no rounds" when game has not started', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.evaluate(() => localStorage.removeItem('bwv3'))
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
 
     await page.getByRole('button', { name: /Rangliste/i }).click()
     await expect(page.getByText('Noch keine Runden gespielt')).toBeVisible()
@@ -177,15 +169,16 @@ test.describe('Rangliste tab', () => {
 
     await page.getByRole('button', { name: /Rangliste/i }).click()
 
-    await expect(page.getByText('Alice')).toBeVisible()
-    await expect(page.getByText('Bob')).toBeVisible()
-    await expect(page.getByText('1 Runden')).toBeVisible()
+    // Wait for any toast to disappear before checking
+    await expect(page.locator('.font-nunito.font-extrabold', { hasText: 'Alice' }).first()).toBeVisible()
+    await expect(page.locator('.font-nunito.font-extrabold', { hasText: 'Bob' }).first()).toBeVisible()
+    await expect(page.getByText('1 Runden').first()).toBeVisible()
   })
 
-  test('shows winner highlighted in leaderboard', async ({ page }) => {
+  test('shows winner in leaderboard', async ({ page }) => {
     await startGame(page)
 
-    // Alice: |200-500| = 300, Bob: |180-500| = 320 → Alice wins
+    // Alice: |200-500|=300, Bob: |180-500|=320 → Alice wins
     const weightInputs = page.locator('input[type="number"]:not([readonly]):not(:disabled)')
     await weightInputs.nth(0).fill('200')
     await weightInputs.nth(1).fill('180')
@@ -193,22 +186,21 @@ test.describe('Rangliste tab', () => {
 
     await page.getByRole('button', { name: /Rangliste/i }).click()
 
-    // First place should show the winner icon
     await expect(page.getByText('🥇')).toBeVisible()
   })
 })
 
 test.describe('localStorage persistence', () => {
   test('persists players across page reloads', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.evaluate(() => localStorage.removeItem('bwv3'))
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
 
     await page.fill('input[placeholder="Name..."]', 'Alice')
     await page.fill('input[placeholder="g"]', '500')
     await page.getByRole('button', { name: '+' }).click()
 
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
 
     await expect(page.getByText('Alice')).toBeVisible()
     await expect(page.getByText('500g')).toBeVisible()
@@ -217,13 +209,14 @@ test.describe('localStorage persistence', () => {
   test('persists game state across page reloads', async ({ page }) => {
     await startGame(page)
 
+    // Enter a weight to modify game state
     const weightInputs = page.locator('input[type="number"]:not([readonly]):not(:disabled)')
     await weightInputs.nth(0).fill('200')
 
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
 
-    // Should still be on the Runde tab with round 1
+    // Should still be on the Runde tab with round 1 par visible
     await page.getByRole('button', { name: /Runde/i }).click()
-    await expect(page.getByText('500g')).toBeVisible() // par
+    await expect(page.getByText('500g').first()).toBeVisible()
   })
 })

@@ -8,8 +8,12 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
+    launchOptions: {
+      executablePath: '/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    },
   },
   projects: [
     {
@@ -23,7 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run build && npm run start',
-    url: 'http://localhost:3000',
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

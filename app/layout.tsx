@@ -48,9 +48,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Non-blocking font load: media="print" loads async, JS switches to "all" */}
         <link
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap"
           rel="stylesheet"
+          media="print"
+          // @ts-expect-error onLoad not typed for link
+          onLoad="this.media='all'"
         />
       </head>
       <body>{children}</body>

@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Setup tab', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
     // Clear localStorage to start fresh
     await page.evaluate(() => localStorage.removeItem('bwv3'))
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
   })
 
   test('shows the app title and navigation', async ({ page }) => {
@@ -81,9 +81,9 @@ test.describe('Setup tab', () => {
 
     await page.getByRole('button', { name: /Spiel starten/i }).click()
 
-    // Should switch to Runde tab
-    await expect(page.getByText('Runde')).toBeVisible()
-    await expect(page.locator('.font-bebas').filter({ hasText: '1' }).first()).toBeVisible()
+    // Should switch to Runde tab - Par shown in header
+    await expect(page.getByText('Angesagt von')).toBeVisible()
+    await expect(page.locator('span.text-gold', { hasText: '500g' })).toBeVisible()
   })
 
   test('reset clears all players and rounds', async ({ page }) => {
