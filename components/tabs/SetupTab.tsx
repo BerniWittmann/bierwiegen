@@ -6,7 +6,7 @@ import { useGame } from '@/lib/gameState'
 function HowToPlayModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.75)' }}
       onClick={onClose}
     >
@@ -157,12 +157,12 @@ export default function SetupTab() {
     <div className="animate-fadeIn">
       {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
 
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-center mb-4">
         <button
           onClick={() => setShowHowTo(true)}
-          className="px-4 py-2 bg-transparent border border-border text-muted rounded-[10px] font-nunito font-extrabold text-[0.75rem] uppercase tracking-[0.5px] cursor-pointer hover:border-gold hover:text-gold transition-all"
+          className="px-5 py-2.5 bg-transparent border border-gold text-gold rounded-[10px] font-nunito font-extrabold text-[0.85rem] uppercase tracking-[1px] cursor-pointer hover:bg-gold hover:text-bg transition-all"
         >
-          ? Spielanleitung
+          ⛳ Spielanleitung
         </button>
       </div>
 
