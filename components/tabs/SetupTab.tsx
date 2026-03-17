@@ -3,6 +3,66 @@
 import { useState } from 'react'
 import { useGame } from '@/lib/gameState'
 
+function HowToPlayModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)' }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-1">
+          <div className="font-bebas text-[1.6rem] tracking-[2px] text-gold">
+            ⛳ Spielanleitung
+          </div>
+          <button
+            onClick={onClose}
+            className="ml-4 mt-1 px-3 py-1 bg-transparent border border-border text-muted rounded-[10px] font-nunito font-extrabold text-[0.82rem] cursor-pointer hover:border-gold hover:text-gold transition-all"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="text-muted text-[0.78rem] font-nunito mb-5">
+          Bier-Golf — das Präzisions-Trinkspiel
+        </div>
+
+        <ol className="flex flex-col gap-4">
+          {[
+            <>Jeder Spieler wiegt sein volles Bier. Das ist das <strong className="text-cream">Startgewicht</strong>.</>,
+            <>Ein Spieler legt das <strong className="text-cream">Par</strong> fest — ein Zielgewicht, auf das getrunken werden soll.</>,
+            <>Alle trinken, um möglichst genau das Par-Gewicht zu erreichen, und wiegen dann nach.</>,
+            <>Wer am nächsten am Par ist, gewinnt die Runde (<strong className="text-cream">kleinster |Delta|-Wert</strong>).</>,
+            <>Der Gewinner legt das nächste Par fest.</>,
+            <>Das Spiel endet, wenn alle Biere leer sind.</>,
+            <>Das niedrigste <strong className="text-cream">Gesamt-Delta</strong> über alle Runden gewinnt — weniger ist besser.</>,
+          ].map((rule, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="font-bebas text-gold text-[1.1rem] leading-none mt-[2px] w-4 shrink-0">{i + 1}</span>
+              <span className="font-nunito text-cream text-[0.85rem] leading-relaxed">{rule}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div
+          className="mt-5 text-[0.78rem] leading-relaxed rounded-r-[10px] p-3"
+          style={{
+            background: 'rgba(240,165,0,0.07)',
+            border: '1px solid rgba(240,165,0,0.2)',
+            borderLeft: '3px solid #f0a500',
+          }}
+        >
+          <span className="text-muted">
+            Tipp: Wer das Par setzt, hat einen strategischen Vorteil — also gut überlegen!
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -42,6 +102,7 @@ export default function SetupTab() {
   const [newName, setNewName] = useState('')
   const [newWeight, setNewWeight] = useState('')
   const [firstPar, setFirstPar] = useState('500')
+  const [showHowTo, setShowHowTo] = useState(false)
 
   const addPlayer = () => {
     const name = newName.trim()
@@ -94,6 +155,17 @@ export default function SetupTab() {
 
   return (
     <div className="animate-fadeIn">
+      {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
+
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => setShowHowTo(true)}
+          className="px-4 py-2 bg-transparent border border-border text-muted rounded-[10px] font-nunito font-extrabold text-[0.75rem] uppercase tracking-[0.5px] cursor-pointer hover:border-gold hover:text-gold transition-all"
+        >
+          ? Spielanleitung
+        </button>
+      </div>
+
       {/* Players card */}
       <div className="bg-surface border border-border rounded-2xl p-6 mb-4">
         <div className="font-bebas text-[1.3rem] tracking-[2px] text-gold mb-4">
