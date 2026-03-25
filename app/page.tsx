@@ -29,7 +29,7 @@ function AppContent() {
       {activeTab === 'rangliste' && <RanglisteTab />}
       <Toast />
       <a
-        href="mailto:info@bierwiegen.app"
+        href="https://github.com/berniwittmann/bierwiegen/issues"
         title="Hilfe / Kontakt"
         className="fixed bottom-6 right-6 w-[42px] h-[42px] rounded-full bg-surface border border-border text-muted text-lg font-extrabold flex items-center justify-center no-underline z-50 transition-all hover:bg-surface2 hover:border-gold hover:text-gold"
       >
